@@ -19,21 +19,15 @@ def first_last_name(string):
 
 
 def new_user(dictionary):
-    new_user_name = input("Please enter the new users full name: ")
-    new_user_dob = input("Please enter the new users date of birth: ")
     new_username = input("Please enter the new users username: ")
     new_user_password = input("Please enter the new users password: ")
     with open("valid_users.pickle", "wb") as vuw:
         dictionary[new_username] = {
         'password': '',
-        'name': '',
-        'dob': '',
         'inventory': {},
         'fishing level': 1,
         'fishing exp': 0}
         dictionary[new_username]['password'] = new_user_password
-        dictionary[new_username]['name'] = new_user_name
-        dictionary[new_username]['dob'] = new_user_dob
         pickle.dump(dictionary, vuw)  # VIKTIG!!!!!!!
     return print("New user added.")
 
@@ -54,7 +48,7 @@ def fish(user, method):
         if method == 'small net':
             print('You cast your net into the water.')
             atempt = random.randint(1, 100)
-            chance = math.atan(lvl) - 0.58
+            chance = (math.atan(lvl) - 0.58) * 100
             if atempt <= chance:
                 shrimp = random.randint(1, 10)
                 user['fishing exp'] += 5 * shrimp
@@ -66,7 +60,7 @@ def fish(user, method):
         elif method == 'spear' and lvl >= 5:
             print('You stab your spear into the lake.')
             atempt = random.randint(1, 100)
-            chance = math.atan(lvl/5) - 0.58
+            chance = (math.atan(lvl/5) - 0.58) * 100
             if atempt <= chance:
                 tuna = random.randint(1, 5)
                 user['fishing exp'] += 20 * tuna
@@ -78,7 +72,7 @@ def fish(user, method):
         elif method == 'fishing rod' and lvl >= 10:
             print('You cast the line far into the lake.')
             atempt = random.randint(1, 100)
-            chance = math.atan(lvl/10) - 0.58
+            chance = (math.atan(lvl/10) - 0.58) * 100
             if atempt <= chance:
                 user['fishing exp'] += 50
                 add_to_inv('salmon', 1)
@@ -121,7 +115,7 @@ while True:
 
     if username in valid_users and password == valid_users[username]['password']:
         user = valid_users[username]
-        print(f"""Welcome, {user['name']}!""")
+        print(f"""Welcome, {username}!""")
         while True:
             command = input("Type Command: ").lower()
 
@@ -132,10 +126,6 @@ while True:
                     New user - Creates a new user.
                     Go fish - Initiates fishing mini-game.
                     Logout - Log out to main screen.""",
-                'test_name': f"""
-                {user['name']}""",   # TEST KOMMANDO - SKAL SLETTES!
-                'test_dob': f"""
-                {user['dob']}""",   # TEST KOMMANDO - SKAL SLETTES!
                 'test_inv': f"""
                 {user['inventory']}""",   # TEST KOMMANDO - SKAL ENDRES!
                 'fish_lvl': f"""Your fishing level is: {user['fishing level']}""",

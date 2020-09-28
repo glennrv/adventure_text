@@ -3,8 +3,6 @@ import pickle
 valid_users = {
     'Test': {
         'password': '1337',
-        'name': 'Test User',
-        'dob': '04-20-1337',
         'inventory': {
 
         },
@@ -13,3 +11,7 @@ valid_users = {
 
 with open("valid_users.pickle", "wb") as vuw:
     pickle.dump(valid_users, vuw)
+
+#with open("valid_users.pickle", "rb") as vur:
+#    valid_users = pickle.load(vur)
+#    print(valid_users)
