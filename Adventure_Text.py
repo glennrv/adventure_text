@@ -3,6 +3,7 @@ import pickle
 import math
 
 
+
 # Functions
 def new_user(dictionary):
     """Adds a new user with all the default settings."""
@@ -131,7 +132,8 @@ while True:
                 'test_inv': f"""
                 {user['inventory']}""",   # TEST COMMAND - WILL BE CHANGED!
                 'fish_lvl': f"""Your fishing level is: {user['fishing level']}""",
-                'fish_exp': f"""Your fishing experience is: {user['fishing exp']}/{user['fishing level'] * 50}"""
+                'fish_exp': f"""Your fishing experience is: {user['fishing exp']}/{user['fishing level'] * 50}""",
+                'valid_users': valid_users.keys()
             }
 
             # Logout command
@@ -167,6 +169,7 @@ while True:
 
                     # Exits the fishing game-loop, back to logged-in game-loop
                     if method == 'leave':
+                        print("You have left the lake.")
                         break
 
                     # Prints avaliable commands within the fishing game-loop
