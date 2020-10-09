@@ -8,6 +8,12 @@ import math
 import pprint
 from time import sleep
 
+# To-do
+# Fix help function
+# Finish fishing function
+# Format list-prints to strings (check inv, lvl up, etc)
+#
+
 
 def fish():
     """Function for the fishing skill"""
@@ -34,39 +40,68 @@ def fish():
             elif len(command) == 2:
                 try:
                     avaliable_commands[command[0]][command[1]]()
-                except TypeError:
+                except (TypeError, KeyError):
                     try:
                         avaliable_commands[command[0]](command[1])
-                    except TypeError:
+                    except (TypeError, KeyError):
                         print('Unknown command.')
             elif len(command) == 3:
                 try:
                     avaliable_commands[command[0]][command[1]][command[2]]()
-                except TypeError:
+                except (TypeError, KeyError):
                     try:
                         avaliable_commands[command[0]][command[1]](command[2])
-                    except TypeError:
-                        print('Unknown command.')
+                    except (TypeError, KeyError):
+                        try:
+                            avaliable_commands[command[0]](command[1] + ' ' + command[2])
+                        except (TypeError, KeyError):
+                            print('Unknown command.')
         else:
             print('Unknown command.')
 
 def start_fishing():
+    fishing = user['stats']['fishing']
     tool = user['carry']
-    valid_tools = ['small net', 'spear', 'fishing rod']
-    tool_modifiers = {'small net': 1, 'spear': 5, 'fishing rod': 10}
-    if tool in valid_tools:
+    avaliable_tools = []
+    avaliable_catch = []
+    tool_modifiers = {'small net': 1, 'harpoon': 5, 'fishing rod': 10}
+
+    for level in fishing_levels:
+        if fishing['level'] >= level:
+            avaliable_tools += fishing_levels[level]['tools']
+            avaliable_catch += fishing_levels[level]['catch']
+
+    if tool in avaliable_tools:
         print(f'You start fishing with your {tool}.')
         while True:
             atempt = random.randint(1, 100)
-            chance = (math.atan(lvl/tool_modifiers[tool]) - 0.58) * 100
+            chance = (math.atan(fishing['level']/tool_modifiers[tool]) - 0.58) * 100
+            fishing['exp'] += 100
+            print('it funks')
+            break
     else:
         return print('You have to equip a valid tool before you can start fishing.')
 
+    if fishing['exp'] >= fishing['level'] * 100:
+        fishing['exp'] -= fishing['level'] * 100
+        fishing['level'] += 1
+        print(f"Congratulations, you advanced to fishing level {fishing['level']}!")
+        if fishing['level'] in fishing_levels:
+            print("You unlocked: ")
+            if len(fishing_levels[fishing['level']]['tools']) > 0:
+                print(f"Tools: {fishing_levels[fishing['level']]['tools']}")
+            else:
+                pass
+            if len(fishing_levels[fishing['level']]['catch']) > 0:
+                print(f"Catch: {fishing_levels[fishing['level']]['catch']}")
+            else:
+                pass
+
 def options_fishing():
     print("""   Level   -    Tools    -   Catch
-       1   -  Small net  -   Shrimp
-       5   -   Spear     -   Tuna
-      10   - Fishing rod -   Salmon""")
+       1   -  Small net  -   Shrimp, Anchovies
+       5   -   Harpoon   -   Tuna, Swordfish
+      10   - Fishing rod -   Herring, Trout""")
 
 
 def hunt():
@@ -134,13 +169,21 @@ users = {
             'fish': 13,
             'ore': 25,
             'meat': 17,
-            'fishing rod': 1
+            'fishing rod': 1,
+            'small net': 1
         },
         'stats': {
             'fishing': {'level': 1, 'exp': 0},
             'hunting': {'level': 1, 'exp': 0},
             'mining': {'level': 1, 'exp': 0}}}
 }
+fishing_levels = {1: {'tools': ['small net'], 'catch': ['shrimp']},
+                  5: {'tools': ['harpoon'], 'catch': ['tuna']},
+                  10: {'tools': ['fishing rod'], 'catch': ['herring']},
+                  15: {'tools': [], 'catch': ['anchovies']},
+                  20: {'tools': [], 'catch': ['trout']},
+                  25: {'tools': [], 'catch': []},
+                  30: {'tools': [], 'catch': ['swordfish']}}
 
 
 # Main menu screen - used for logging in to the game
@@ -170,22 +213,21 @@ while True:
                 elif len(command) == 2:
                     try:
                         avaliable_commands[command[0]][command[1]]()
-                    except TypeError:
+                    except (TypeError, KeyError):
                         try:
                             avaliable_commands[command[0]](command[1])
-                        except TypeError:
+                        except (TypeError, KeyError):
                             print('Unknown command.')
                 elif len(command) == 3:
                     try:
                         avaliable_commands[command[0]][command[1]][command[2]]()
-                    except TypeError:
+                    except (TypeError, KeyError):
                         try:
                             avaliable_commands[command[0]][command[1]](command[2])
-                        except TypeError:
+                        except (TypeError, KeyError):
                             try:
                                 avaliable_commands[command[0]](command[1] + ' ' + command[2])
-
-                            except TypeError:
+                            except (TypeError, KeyError):
                                 print('Unknown command.')
             else:
                 print('Unknown command.')
