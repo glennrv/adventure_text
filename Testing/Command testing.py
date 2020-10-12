@@ -10,9 +10,8 @@ from time import sleep
 
 # To-do
 # Fix help function
-# Finish fishing function
+# Finish start_fishing function
 # Format list-prints to strings (check inv, lvl up, etc)
-#
 
 
 def fish():
@@ -21,6 +20,7 @@ def fish():
     # Fish lvl, fish xp, tool, fish type, success rate, xp gain, lvl up
 
     print('You head to the docks.')
+    global area
     area = 'The docks'
     avaliable_commands = {**command_prompts['global'], **command_prompts[area]}
 
@@ -64,36 +64,74 @@ def start_fishing():
     tool = user['carry']
     avaliable_tools = []
     avaliable_catch = []
+    valid_catch = []
     tool_modifiers = {'small net': 1, 'harpoon': 5, 'fishing rod': 10}
+    catch_modifiers = {'shrimp': 1, 'tuna': 2, 'herring': 3, 'anchovies': 4, 'trout': 5, 'swordfish': 7}
+    catch_list = {'small net': ['shrimp', 'anchovies'], 'harpoon': ['tuna', 'swordfish'], 'fishing rod': ['herring', 'trout']}
 
     for level in fishing_levels:
         if fishing['level'] >= level:
             avaliable_tools += fishing_levels[level]['tools']
-            avaliable_catch += fishing_levels[level]['catch']
 
     if tool in avaliable_tools:
-        print(f'You start fishing with your {tool}.')
-        while True:
-            atempt = random.randint(1, 100)
-            chance = (math.atan(fishing['level']/tool_modifiers[tool]) - 0.58) * 100
-            fishing['exp'] += 100
-            print('it funks')
-            break
+        for level in fishing_levels:
+            if fishing['level'] >= level:
+                avaliable_catch += fishing_levels[level]['catch']
     else:
         return print('You have to equip a valid tool before you can start fishing.')
+
+    for fish in avaliable_catch:
+        if fish in catch_list[tool]:
+            valid_catch.append(fish)
+    print(catch_list[tool])
+    print(avaliable_catch)
+    print(valid_catch)
+    print(f'You start fishing with your {tool}.')
+    while True:
+        atempt = random.randint(1, 100)
+        chance = (math.atan(fishing['level']/tool_modifiers[tool]) - 0.58) * 100
+        time = random.uniform(0.5, 10 - 0.1 * fishing['level'])
+        delay = int(round(time, 0))
+        for i in range(1, delay):
+            print('. . .')
+            sleep(1)
+        # To-do
+        # Add to inv
+        # Add ability to catch more than 1 catch
+        # Maybe add better waiting graphics
+        if atempt <= chance:
+            catch = valid_catch[random.randint(0, len(valid_catch)-1)]
+            fishing['exp'] += 10 * catch_modifiers[catch]
+            print(f'Congratulations, you caught a {catch}!')
+            com = input('Would you like to keep fishing? (y/n): ').lower()
+            if com == 'y':
+                continue
+            elif com == 'n':
+                break
+            else:
+                print('Unknown command.')
+        else:
+            print('You did not catch anything')
+            com = input('Would you like to keep fishing? (y/n): ').lower()
+            if com == 'y':
+                continue
+            elif com == 'n':
+                break
+            else:
+                print('Unknown command.')
 
     if fishing['exp'] >= fishing['level'] * 100:
         fishing['exp'] -= fishing['level'] * 100
         fishing['level'] += 1
-        print(f"Congratulations, you advanced to fishing level {fishing['level']}!")
+        print(f'''Congratulations, you advanced to fishing level {fishing['level']}!''')
         if fishing['level'] in fishing_levels:
-            print("You unlocked: ")
+            print('You unlocked: ')
             if len(fishing_levels[fishing['level']]['tools']) > 0:
-                print(f"Tools: {fishing_levels[fishing['level']]['tools']}")
+                print(f'''Tools: {fishing_levels[fishing['level']]['tools']}''')
             else:
                 pass
             if len(fishing_levels[fishing['level']]['catch']) > 0:
-                print(f"Catch: {fishing_levels[fishing['level']]['catch']}")
+                print(f'''Catch: {fishing_levels[fishing['level']]['catch']}''')
             else:
                 pass
 
@@ -102,8 +140,6 @@ def options_fishing():
        1   -  Small net  -   Shrimp, Anchovies
        5   -   Harpoon   -   Tuna, Swordfish
       10   - Fishing rod -   Herring, Trout""")
-
-
 def hunt():
     print('You go hunting')
 def mine():
@@ -119,7 +155,22 @@ def check_skill(skill):
 def check_carry():
     print(user['carry'])
 def help_local():
-    print(f'Helpmenu for {area}')
+    global_commands = '''
+    Help        -       Shows the help menu for the local area.
+    Check       -       Checks (stats, inv, skill [skill], carry).
+    Equip       -       Equips item to carry.
+    Unequip     -       Unequips carry.'''
+    town_square = '''
+    Go          -       Takes you to new area (fish, hunt, mine, trade).'''
+    the_docks = '''
+    Fish        -       Start fishing with currently equipped carry.
+    Options     -       Shows the option menu for fishing skill.'''
+    areas = {'Town square': town_square, 'The docks': the_docks}
+    if area in areas:
+        print(f'''
+    Help menu for {area}''')
+        print(global_commands, end='')
+        print(areas[area])
 def equip(tool):
     if tool in user['inv']:
         user['carry'] = tool
@@ -170,7 +221,8 @@ users = {
             'ore': 25,
             'meat': 17,
             'fishing rod': 1,
-            'small net': 1
+            'small net': 1,
+            'harpoon': 1
         },
         'stats': {
             'fishing': {'level': 1, 'exp': 0},
@@ -205,31 +257,34 @@ while True:
             avaliable_commands = {**command_prompts['global'], **command_prompts[area]}
             command_raw = input('Command: ').lower()
             command = command_raw.split()
-            if command[0] == 'exit':
-                break
-            elif command[0] in avaliable_commands:
-                if len(command) == 1:
-                    avaliable_commands[command[0]]()
-                elif len(command) == 2:
-                    try:
-                        avaliable_commands[command[0]][command[1]]()
-                    except (TypeError, KeyError):
+            if len(command_raw) > 0:
+                if command[0] == 'exit':
+                    break
+                elif command[0] in avaliable_commands:
+                    if len(command) == 1:
+                        avaliable_commands[command[0]]()
+                    elif len(command) == 2:
                         try:
-                            avaliable_commands[command[0]](command[1])
-                        except (TypeError, KeyError):
-                            print('Unknown command.')
-                elif len(command) == 3:
-                    try:
-                        avaliable_commands[command[0]][command[1]][command[2]]()
-                    except (TypeError, KeyError):
-                        try:
-                            avaliable_commands[command[0]][command[1]](command[2])
+                            avaliable_commands[command[0]][command[1]]()
                         except (TypeError, KeyError):
                             try:
-                                avaliable_commands[command[0]](command[1] + ' ' + command[2])
+                                avaliable_commands[command[0]](command[1])
                             except (TypeError, KeyError):
                                 print('Unknown command.')
+                    elif len(command) == 3:
+                        try:
+                            avaliable_commands[command[0]][command[1]][command[2]]()
+                        except (TypeError, KeyError):
+                            try:
+                                avaliable_commands[command[0]][command[1]](command[2])
+                            except (TypeError, KeyError):
+                                try:
+                                    avaliable_commands[command[0]](command[1] + ' ' + command[2])
+                                except (TypeError, KeyError):
+                                    print('Unknown command.')
+                else:
+                    print('Unknown command.')
             else:
-                print('Unknown command.')
+                print('Invalid command.')
     else:
         print('Invalid username or password.')
