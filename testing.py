@@ -1,13 +1,16 @@
 import pickle
 
 valid_users = {
-    'Test': {
+    'Admin': {
         'password': '1337',
-        'inventory': {
+        'carry': '',
+        'inv': {
 
         },
-        'fishing level': 1,
-        'fishing exp': 0}}
+        'stats': {
+            'fishing': {'level': 1, 'exp': 0},
+            'hunting': {'level': 1, 'exp': 0},
+            'mining': {'level': 1, 'exp': 0}}}}
 
 with open("valid_users.pickle", "wb") as vuw:
     pickle.dump(valid_users, vuw)

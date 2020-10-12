@@ -22,7 +22,7 @@ def new_user(dictionary):
     new_user_dob = input("Please enter the new users date of birth: ")
     new_username = input("Please enter the new users username: ")
     new_user_password = input("Please enter the new users password: ")
-    with open("valid_users.pickle", "wb") as vuw:
+    with open("../valid_users.pickle", "wb") as vuw:
         dictionary[new_username] = {
         'password': '',
         'name': '',
@@ -87,7 +87,7 @@ def fish(user, method):
 
 
 def add_to_inv(item, amount):
-    with open("valid_users.pickle", "wb") as vuw:
+    with open("../valid_users.pickle", "wb") as vuw:
         if item in user['inventory']:
             user['inventory'][item] += amount
             pickle.dump(valid_users, vuw) # VIKTIG!!!!!!!
@@ -98,7 +98,7 @@ def add_to_inv(item, amount):
 
 # Program setup
 fish_methods = ['small net', 'spear', 'fishing rod']
-valid_users_in = open("valid_users.pickle", "rb")
+valid_users_in = open("../valid_users.pickle", "rb")
 valid_users = pickle.load(valid_users_in)
 
 # Game loop
