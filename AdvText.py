@@ -3,11 +3,17 @@ import pickle
 import math
 import pprint
 from time import sleep
+from texttable import Texttable
+
+# Patch notes
+# Added trade functions
+# - Fixed bugs (empty equip command; space command break)
 
 # To-do
-# Fix help function
 # Finish start_fishing function
 # Format list-prints to strings (check inv, lvl up, etc)
+# Finish trade functions
+#   Fix vendor stock
 
 
 def fish():
@@ -27,7 +33,10 @@ def fish():
             break
         elif command[0] in avaliable_commands:
             if len(command) == 1:
-                avaliable_commands[command[0]]()
+                try:
+                    avaliable_commands[command[0]]()
+                except(TypeError, KeyError):
+                    print('Unknown command')
             elif len(command) == 2:
                 try:
                     avaliable_commands[command[0]][command[1]]()
@@ -105,6 +114,7 @@ def start_fishing():
             # Randomized catch from valid_catch list, add xp, catch message
             catch = valid_catch[random.randint(0, len(valid_catch)-1)]
             fishing['exp'] += 10 * catch_modifiers[catch]
+            add_to_inv(catch, 1)
             print(f'Congratulations, you caught a {catch}!')
 
             # Asks if user would like to continue fishing
@@ -158,7 +168,106 @@ def hunt():
 def mine():
     print('You go mining')
 def shop():
-    print('You go to the market')
+    with open("vendors.pickle", "rb") as vendors_in:
+        global vendors
+        vendors = pickle.load(vendors_in)
+        print('You go to the market')
+        global area
+        area = 'The market'
+        avaliable_commands = {**command_prompts['global'], **command_prompts[area]}
+        print(f'At the market you see {len(vendors)} vendors open for trading.')
+        while True:
+            command_raw = input(f'[{area}]Command: ').lower()
+            command = command_raw.split()
+            if command_raw == 'leave':
+                print('You head back to the Town Square.')
+                break
+            elif command[0] in avaliable_commands:
+                if len(command) == 1:
+                    try:
+                        avaliable_commands[command[0]]()
+                    except(TypeError, KeyError):
+                        print('Unknown command')
+                elif len(command) == 2:
+                    try:
+                        avaliable_commands[command[0]][command[1]]()
+                    except (TypeError, KeyError):
+                        try:
+                            avaliable_commands[command[0]](command[1])
+                        except (TypeError, KeyError):
+                            print('Unknown command.')
+                elif len(command) == 3:
+                    try:
+                        avaliable_commands[command[0]][command[1]][command[2]]()
+                    except (TypeError, KeyError):
+                        try:
+                            avaliable_commands[command[0]][command[1]](command[2])
+                        except (TypeError, KeyError):
+                            try:
+                                avaliable_commands[command[0]](command[1] + ' ' + command[2])
+                            except (TypeError, KeyError):
+                                print('Unknown command.')
+            else:
+                print('Unknown command.')
+
+def trade(vendor_str):
+    if vendor_str in vendors:
+        inventory = [['Item', 'Stock', 'Buy', 'Sell']]
+        for item in vendors[vendor_str]:
+            inventory.append([item.capitalize(), vendors[vendor_str][item]['stock'], vendors[vendor_str][item]['buy'], vendors[vendor_str][item]['sell']])
+        t = Texttable()
+        t.add_rows(inventory)
+        print(t.draw())
+
+        while True:
+            vendor = vendors[vendor_str]
+            command_raw = input(f'''What would you like to do? [buy/sell amount item]: ''').lower()
+            if command_raw == 'exit':
+                break
+
+            command = command_raw.split(' ')
+            sb = command[0]
+            # todo: make possible to not enter amount (sell all)
+            amount = int(command[1])
+            if len(command) == 3:
+                item = command[2]
+            elif len(command) == 4:
+                item = f"{command[2]} {command[3]}"
+            else:
+                print('Unknown Command...')
+
+            if sb == 'buy':
+                price = amount * vendor[item]['buy']
+                if item in vendor and vendor[item]['stock'] >= amount:
+                    if user['coins'] >= price:
+                        add_to_inv(item, amount, price)
+                        remove_from_vendor(vendor_str, item, amount)
+                        return print(f'''You bought {amount} {item}''')
+                    else:
+                        print(f'''You need {price} coins to buy that.''')
+                else:
+                    print(f'''{item} not in stock.''')
+            elif sb == 'sell':
+                price = amount * vendor[item]['sell']
+                if item in (vendor and user['inv']):
+                    if user['inv'][item] >= amount:
+                        remove_from_inv(item, amount, price)
+                        add_to_vendor(vendor_str, item, amount)
+                        return print(f'''You sold {amount} {item} for {price} coins.''')
+                    else:
+                        print(f'''You only have {user['inv'][item]} in your inventory.''')
+                else:
+                    print('You do not have that item in your inventory.')
+            else:
+                print('Unknown command.')
+    else:
+        print('Vendor is not avaliable.')
+
+def options_fishing():
+    print('''    The vendors open for trading are:
+    Blacksmith  -   
+    Carpenter   -   
+    Fisherman   -   ''')
 def check_inv():
     print(user['inv'])
 def check_stats():
@@ -167,6 +276,8 @@ def check_skill(skill):
     print(user['stats'][skill])
 def check_carry():
     print(user['carry'])
+def check_coins():
+    print(f'''Your current balance: {user['coins']} coins.''')
 def help_local():
     global_commands = '''
     Help        -       Shows the help menu for the local area.
@@ -180,12 +291,19 @@ def help_local():
     Fish        -       Start fishing with currently equipped carry.
     Options     -       Shows the option menu for fishing skill.
     Leave       -       Leaves the docks, heads back to Town square.'''
-    areas = {'Town square': town_square, 'The docks': the_docks}
+    the_market = '''
+    Trade       -       Trades with (vendor)
+    Leave       -       Leaves the market, heads back to Town square'''
+    areas = {'Town square': town_square, 'The docks': the_docks, "The market": the_market}
     if area in areas:
         print(f'''
     Help menu for {area}''')
         print(global_commands, end='')
         print(areas[area])
+    else:
+        print(f'''
+    Help menu for {area}''')
+        print(global_commands)
 def equip(tool):
     if tool in user['inv']:
         user['carry'] = tool
@@ -211,15 +329,47 @@ def new_user(dictionary):
         dictionary[new_username]['password'] = new_user_password
         pickle.dump(dictionary, vuw)  # VIKTIG!!!!!!!
     return print("New user added.")
-def add_to_inv(item, amount):
+def add_to_inv(item, amount, price=0):
     """Adds item and amount to user's inventory"""
     with open("valid_users.pickle", "wb") as vuw:
-        if item in user['inventory']:
-            user['inventory'][item] += amount
+        if item in user['inv']:
+            user['inv'][item] += amount
+            user['coins'] -= price
             pickle.dump(valid_users, vuw)  # VIKTIG!!!!!!!
+            return 'item added to inv'
         else:
-            user['inventory'][item] = amount
+            user['inv'][item] = amount
+            user['coins'] -= price
             pickle.dump(valid_users, vuw)  # VIKTIG!!!!!!!
+            return 'item added to inv'
+def remove_from_inv(item, amount, price=0):
+    """Adds item and amount to user's inventory"""
+    with open("valid_users.pickle", "wb") as vuw:
+        if item in user['inv']:
+            user['inv'][item] -= amount
+            user['coins'] += price
+            if user['inv'][item] == 0:
+                user['inv'].pop(item)
+            pickle.dump(valid_users, vuw)  # VIKTIG!!!!!!!
+            return 'item removed from inv'
+        else:
+            pass
+def add_to_vendor(vendor, item, amount):
+    """Adds item and amount to user's inventory"""
+    with open("vendors.pickle", "wb") as vw:
+        if item in vendors[vendor]:
+            vendors[vendor][item]['stock'] += amount
+            pickle.dump(vendors, vw)  # VIKTIG!!!!!!!
+        else:
+            print('Vendor does not want this item')
+def remove_from_vendor(vendor, item, amount):
+    """Adds item and amount to user's inventory"""
+    with open("vendors.pickle", "wb") as vw:
+        if item in vendors[vendor]:
+            vendors[vendor][item]['stock'] -= amount
+            pickle.dump(vendors, vw)  # VIKTIG!!!!!!!
+        else:
+            pass
 
 
 command_prompts = {
@@ -229,7 +379,8 @@ command_prompts = {
             'stats': check_stats,       # 'check stats' - prints the lvl of every skill
             'inv': check_inv,           # 'check inv' - prints the content of your inventory
             'skill': check_skill,       # 'check skill (fishing, hunting, mining)' - prints your level and experience in a specific skill
-            'carry': check_carry
+            'carry': check_carry,
+            'coins': check_coins
         },
         'equip': equip,                 # 'equip (tool)' - equips a tool to carry
         'unequip': unequip              # 'unequip' - unequips carry
@@ -251,6 +402,10 @@ command_prompts = {
     },
     'The mine': {
 
+    },
+    'The market': {
+        'trade': trade,
+        'options': options_fishing
     }
 }
 fishing_levels = {1: {'tools': ['small net'], 'catch': ['shrimp']},
@@ -260,15 +415,26 @@ fishing_levels = {1: {'tools': ['small net'], 'catch': ['shrimp']},
                   20: {'tools': [], 'catch': ['trout']},
                   25: {'tools': [], 'catch': []},
                   30: {'tools': [], 'catch': ['swordfish']}}
+vendors = {}
 
 # Loads in the file containing all the valid users and their stats
 valid_users_in = open("valid_users.pickle", "rb")
 valid_users = pickle.load(valid_users_in)
+vendors_in = open("vendors.pickle", "rb")
+vendors = pickle.load(vendors_in)
 
 
 # Main menu screen - used for logging in to the game
 while True:
     area = 'Main menu'
+    print ('''
+Welcome to Adventure text!''')
+    already_user = input('''
+To create a new user, type 'new' and press enter.
+If you already have a user, just press enter.
+Command: ''').lower()
+    if already_user == 'new':
+        new_user(valid_users)
     username = input('Username: ')
     if username.lower() == 'quit':
         print('You have left the game.')
@@ -286,36 +452,39 @@ while True:
             command_raw = input('Command: ').lower()
             command = command_raw.split()
             if len(command_raw) > 0:
-                if command[0] == 'logout':
-                    break
-                elif command[0] in avaliable_commands:
-                    if len(command) == 1:
-                        try:
-                            avaliable_commands[command[0]]()
-                        except (TypeError, KeyError):
-                            print('Unknown command.')
-                    elif len(command) == 2:
-                        try:
-                            avaliable_commands[command[0]][command[1]]()
-                        except (TypeError, KeyError):
+                try:
+                    if command[0] == 'logout':
+                        break
+                    elif command[0] in avaliable_commands:
+                        if len(command) == 1:
                             try:
-                                avaliable_commands[command[0]](command[1])
+                                avaliable_commands[command[0]]()
                             except (TypeError, KeyError):
                                 print('Unknown command.')
-                    elif len(command) == 3:
-                        try:
-                            avaliable_commands[command[0]][command[1]][command[2]]()
-                        except (TypeError, KeyError):
+                        elif len(command) == 2:
                             try:
-                                avaliable_commands[command[0]][command[1]](command[2])
+                                avaliable_commands[command[0]][command[1]]()
                             except (TypeError, KeyError):
                                 try:
-                                    avaliable_commands[command[0]](command[1] + ' ' + command[2])
+                                    avaliable_commands[command[0]](command[1])
                                 except (TypeError, KeyError):
                                     print('Unknown command.')
-                else:
+                        elif len(command) == 3:
+                            try:
+                                avaliable_commands[command[0]][command[1]][command[2]]()
+                            except (TypeError, KeyError):
+                                try:
+                                    avaliable_commands[command[0]][command[1]](command[2])
+                                except (TypeError, KeyError):
+                                    try:
+                                        avaliable_commands[command[0]](command[1] + ' ' + command[2])
+                                    except (TypeError, KeyError):
+                                        print('Unknown command.')
+                    else:
+                        print('Unknown command.')
+                except IndexError:
                     print('Unknown command.')
             else:
-                print('Invalid command.')
+                print('Unknown command.')
     else:
         print('Invalid username or password.')
