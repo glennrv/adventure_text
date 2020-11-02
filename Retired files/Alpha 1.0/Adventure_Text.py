@@ -12,7 +12,7 @@ def new_user(dictionary):
     """Adds a new user with all the default settings."""
     new_username = input("Please enter the new users username: ")
     new_user_password = input("Please enter the new users password: ")
-    with open("../valid_users.pickle", "wb") as vuw:
+    with open("../Alpha 2.0/valid_users.pickle", "wb") as vuw:
         dictionary[new_username] = {
         'password': '',
         'inventory': {},
@@ -25,7 +25,7 @@ def new_user(dictionary):
 
 def add_to_inv(item, amount):
     """Adds item and amount to user's inventory"""
-    with open("../valid_users.pickle", "wb") as vuw:
+    with open("../Alpha 2.0/valid_users.pickle", "wb") as vuw:
         if item in user['inventory']:
             user['inventory'][item] += amount
             pickle.dump(valid_users, vuw)  # VIKTIG!!!!!!!
@@ -94,7 +94,7 @@ def fish(user, method):
 fish_methods = ['small net', 'spear', 'fishing rod']
 
 # Loads in the file containing all the valid users and their stats
-valid_users_in = open("../valid_users.pickle", "rb")
+valid_users_in = open("../Alpha 2.0/valid_users.pickle", "rb")
 valid_users = pickle.load(valid_users_in)
 
 ### Game loop

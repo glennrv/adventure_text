@@ -117,6 +117,24 @@ def start_fishing():
             add_to_inv(catch, 1)
             print(f'Congratulations, you caught a {catch}!')
 
+            # Checks if user has enough exp to lvl-up
+            if fishing['exp'] >= fishing['level'] * 50:
+                fishing['exp'] -= fishing['level'] * 50
+                fishing['level'] += 1
+                print(f'''Congratulations, you advanced to fishing level {fishing['level']}!''')
+
+                # Checks if the new lvl unlocks anything, if yes, prints the new tools and/or catches
+                if fishing['level'] in fishing_levels:
+                    print('You unlocked: ')
+                    if len(fishing_levels[fishing['level']]['tools']) > 0:
+                        print(f'''Tools: {fishing_levels[fishing['level']]['tools']}''')
+                    else:
+                        pass
+                    if len(fishing_levels[fishing['level']]['catch']) > 0:
+                        print(f'''Catch: {fishing_levels[fishing['level']]['catch']}''')
+                    else:
+                        pass
+
             # Asks if user would like to continue fishing
             com = input('Would you like to keep fishing? (y/n): ').lower()
             if com == 'y':
@@ -136,24 +154,6 @@ def start_fishing():
                 break
             else:
                 print('Unknown command.')
-
-    # Checks if user has enough exp to lvl-up
-    if fishing['exp'] >= fishing['level'] * 50:
-        fishing['exp'] -= fishing['level'] * 50
-        fishing['level'] += 1
-        print(f'''Congratulations, you advanced to fishing level {fishing['level']}!''')
-
-        # Checks if the new lvl unlocks anything, if yes, prints the new tools and/or catches
-        if fishing['level'] in fishing_levels:
-            print('You unlocked: ')
-            if len(fishing_levels[fishing['level']]['tools']) > 0:
-                print(f'''Tools: {fishing_levels[fishing['level']]['tools']}''')
-            else:
-                pass
-            if len(fishing_levels[fishing['level']]['catch']) > 0:
-                print(f'''Catch: {fishing_levels[fishing['level']]['catch']}''')
-            else:
-                pass
 def options_fishing():
     print("""   Level   -    Tools    -   Catch
        1   -  Small net  -   Shrimp
@@ -209,7 +209,6 @@ def shop():
                                 print('Unknown command.')
             else:
                 print('Unknown command.')
-
 def trade(vendor_str):
     if vendor_str in vendors:
         inventory = [['Item', 'Stock', 'Buy', 'Sell']]
@@ -262,7 +261,6 @@ def trade(vendor_str):
                 print('Unknown command.')
     else:
         print('Vendor is not avaliable.')
-
 def options_fishing():
     print('''    The vendors open for trading are:
     Blacksmith  -   
@@ -321,6 +319,7 @@ def new_user(dictionary):
         dictionary[new_username] = {
         'password': '',
         'carry': '',
+        'coins': 0,
         'inv': {},
         'stats': {
             'fishing': {'level': 1, 'exp': 0},

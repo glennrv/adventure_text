@@ -6,7 +6,7 @@ valid_users = {
         'carry': '',
         'coins': 0,
         'inv': {
-            'harpoon': 1
+
         },
         'stats': {
             'fishing': {'level': 1, 'exp': 0},
